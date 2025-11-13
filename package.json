@@ -1,0 +1,28 @@
+{
+  "name": "api-bookshelf",
+  "version": "1.0.0",
+  "description": "Project API Bookshelf Dicoding",
+  "keywords": [
+    "API",
+    "Bookshelf"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embuh75"
+  },
+  "license": "ISC",
+  "author": "embuh75",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node main",
+    "start-dev": "nodemon main"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "mysql": "^2.18.1",
+    "nanoid": "^5.1.6",
+    "nodemon": "^3.1.10"
+  }
+}

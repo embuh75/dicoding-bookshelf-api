@@ -1,4 +1,4 @@
-const db = require('../db/connection');
+const books = [];
 const { nanoid } = require('nanoid');
 
 
@@ -8,11 +8,13 @@ const main = (req, res) => {
         application: "Bookshelf API",
         version: "1.0.0",
         author: "FUN",
-        message: "Welcome to Bookshelf API SAIA 📚",
+        message: "Welcome to Bookshelf API FUN 📚",
         endpoints: {
-            getAllBooks: "/books",
             addBook: "/books (POST)",
+            getAllBooks: "/books",
             getBookById: "/books/:bookId",
+            updataBook: "/books/:bookId (PUT)",
+            deleteBook: "/books/:bookId (DELETE)"
         }
     });
 };
@@ -21,7 +23,8 @@ const main = (req, res) => {
 const addBook = (req, res) => {
     const { name, year, author, summary, publisher, pageCount, readPage, reading } = req.body;
     const id = nanoid(10);
-    const timestamp = new Date().toISOString();
+    const insertedAt = new Date().toISOString();
+    const updatedAt = insertedAt;
     const finished = pageCount === readPage;
 
     if (!name) {
@@ -39,21 +42,14 @@ const addBook = (req, res) => {
     }
 
     else {
-        const column = "id, name, year, author, summary, publisher, pageCount, readPage, finished, reading, insertedAt, updatedAt";
-        const values = `'${id}', '${name}', ${year}, '${author}', '${summary}', '${publisher}', ${pageCount}, ${readPage}, ${finished}, ${reading}, '${timestamp}', '${timestamp}'`;
-        const query = `INSERT INTO books (${column}) VALUES (${values})`;
+        const newBook = { id, name, year, author, summary, publisher, pageCount, readPage, finished, reading, insertedAt, updatedAt };
+        books.push(newBook);
 
-        db.query(query, (error, result) => {
-            if (error) console.log(error);
-            else {
-                console.log(result);
-                res.status(201).json({
-                    "status": "success",
-                    "message": "Buku berhasil ditambahkan",
-                    "data": {
-                        "bookId": id
-                    }
-                });
+        res.status(201).json({
+            "status": "success",
+            "message": "Buku berhasil ditambahkan",
+            "data": {
+                "bookId": id
             }
         });
     }
@@ -61,148 +57,62 @@ const addBook = (req, res) => {
 
 //Get by name/?finished/?reading/all
 const getBook = (req, res) => {
-    const queryName = req.query.name;
-    const queryFinished = req.query.finished;
-    const queryReading = req.query.reading;
-    const sqlName = `SELECT id, name, publisher FROM books WHERE name LIKE '%${queryName}%'`;
-    const sqlFinished = `SELECT id, name, publisher FROM books WHERE finished = ${queryFinished}`;
-    const sqlReading = `SELECT id, name, publisher FROM books WHERE reading = ${queryReading}`;
-    const sqlBooks = `SELECT id, name, publisher FROM books`;
+    const { name, reading, finished } = req.query;
+    let filtered = books;
 
-    //get book name
-    if (queryName) {
-        db.query(sqlName, (error, result) => {
-            if (error) {
-                console.log(error);
-            }
-            else {
-                res.status(200).json({
-                    "status": "success",
-                    "data": {
-                        "books": result
-                    }
-                });
-            }
-        });
+    if (name) {
+        filtered = filtered.filter((books) => books.name.toLowerCase().includes(name.toLowerCase()));
     }
 
-    //get book by ?finished
-    else if (queryFinished == 1) {
-        db.query(sqlFinished, (error, result) => {
-            if (error) {
-                console.log(error);
-            }
-            else {
-                res.status(200).json({
-                    "status": "success",
-                    "data": {
-                        "books": result
-                    }
-                });
-            }
-        });
+    if (reading !== undefined) {
+        filtered = filtered.filter((books) => Number(books.reading) === Number(reading));
     }
 
-    else if (queryFinished == 0) {
-        db.query(sqlFinished, (error, result) => {
-            if (error) {
-                console.log(error);
-            }
-            else {
-                res.status(200).json({
-                    "status": "success",
-                    "data": {
-                        "books": result
-                    }
-                });
-            }
-        });
+    if (finished !== undefined) {
+        filtered = filtered.filter((books) => Number(books.finished) === Number(finished));
     }
 
-    //get book by ?finished
-    else if(queryReading == 1) {
-        db.query(sqlReading, (error, result) => {
-            if (error) {
-                console.log(error);
-            }
-            else {
-                res.status(200).json({
-                    "status": "success",
-                    "data": {
-                        "books": result
-                    }
-                });
-            }
-        });
-    }
+    const response = filtered.map((books) => ({
+        id: books.id,
+        name: books.name,
+        publisher: books.publisher
+    }));
 
-    else if (queryReading == 0) {
-        db.query(sqlReading, (error, result) => {
-            if (error) {
-                console.log(error);
-            }
-            else {
-                res.status(200).json({
-                    "status": "success",
-                    "data": {
-                        "books": result
-                    }
-                });
-            }
-        });
-    }
-
-    else {
-        db.query(sqlBooks, (error, result) => {
-            if (error) {
-                console.log(error);
-            }
-            else {
-                res.status(200).json({
-                    "status": "success",
-                    "data": {
-                        "books": result
-                    }
-                });
-            }
-        });
-    }
+    res.status(200).json({
+        status: 'success',
+        data: { books: response },
+    });
 };
 
 //Get book by id
 const getBookId = (req, res) => {
-    const bookId = req.params.bookId;
-    const sql = `SELECT * FROM books WHERE id = '${bookId}'`;
+    const book = books.find((book) => book.id === req.params.bookId);
 
-    db.query(sql, (error, result) => {
-        if (error) console.log(error);
+    if (!book) {
+        return res.status(404).json({
+            status: 'fail',
+            message: 'Buku tidak ditemukan',
+        });
+    }
 
-        if (result.length === 0) {
-            res.status(404).json({
-                "status": "fail",
-                "message": "Buku tidak ditemukan"
-            });
-        }
-        else {
-            const book = result[0];
-            book.finished = Boolean(book.finished);
-            book.reading = Boolean(book.reading);
-            res.status(200).json({
-                "status": "success",
-                "data": {
-                    "book": book,
-                }
-            });
-        }
+    res.status(200).json({
+        status: 'success',
+        data: { book }
     });
 };
 
 //Update Book
 const updateBook = (req, res) => {
-    const bookId = req.params.bookId;
-    const timestamp = new Date().toISOString();
+    const { bookId } = req.params;
     const { name, year, author, summary, publisher, pageCount, readPage, reading } = req.body;
-    const query = `UPDATE books SET name = '${name}', year = ${year}, author = '${author}', summary = '${summary}', publisher = '${publisher}', pageCount = ${pageCount}, readPage = ${readPage}, reading = ${reading}, updatedAt = '${timestamp}'  WHERE id = '${bookId}'`;
+    const findBooks = books.findIndex((book) => book.id === bookId);
+
+    if (findBooks === -1) {
+        res.status(404).json({
+            "status": "fail",
+            "message": "Gagal memperbarui buku. Id tidak ditemukan"
+        });
+    }
 
     if (!name) {
         res.status(400).json({
@@ -211,52 +121,52 @@ const updateBook = (req, res) => {
         });
     }
 
-    else if (pageCount < readPage) {
+    if (readPage > pageCount) {
         res.status(400).json({
             "status": "fail",
             "message": "Gagal memperbarui buku. readPage tidak boleh lebih besar dari pageCount"
         });
     }
 
-    else {
-        db.query(query, (error, result) => {
-            if (error) console.log(error);
+    const updatedAt = new Date().toISOString();
+    const finished = pageCount === readPage;
 
-            if (result.affectedRows === 0) {
-                res.status(400).json({
-                    "status": "fail",
-                    "message": "Gagal memperbarui buku. Id tidak ditemukan"
-                });
-            }
-            else {
-                res.status(200).json({
-                    "status": "success",
-                    "message": "Buku berhasil diperbarui"
-                });
-            }
-        });
+    books[findBooks] = {
+        ...books[findBooks],
+        name, 
+        year, 
+        author, 
+        summary, 
+        publisher, 
+        pageCount, 
+        readPage,
+        finished, 
+        reading,
+        updatedAt
     }
+
+    res.status(200).json({
+        "status": "success",
+        "message": "Buku berhasil diperbarui"
+    });
 };
 
 //Delete Book
 const deleteBook = (req, res) => {
-    const params = req.params.bookId;
-    const query = `DELETE FROM books WHERE id = "${params}"`;
+    const { bookId } = req.params;
+    const findBooks = books.findIndex((book) => book.id === bookId);
 
-    db.query(query, (error, result) => {
-        if (error) console.log(error);
-        if (result.affectedRows === 0) {
-            res.status(404).json({
-                "status": "fail",
-                "message": "Buku gagal dihapus. Id tidak ditemukan"
-            });
-        }
-        else {
-            res.status(200).json({
-                "status": "success",
-                "message": "Buku berhasil dihapus"
-            })
-        }
+    if (findBooks === -1) {
+        res.status(404).json({
+            "status": "fail",
+            "message": "Buku gagal dihapus. Id tidak ditemukan"
+        });
+    }
+
+    books.splice(findBooks, 1);
+    res.status(200).json({
+        "status": "success",
+        "message": "Buku berhasil dihapus"
     });
 };
 

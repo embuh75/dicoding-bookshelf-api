@@ -15,8 +15,8 @@
   "type": "commonjs",
   "main": "server.js",
   "scripts": {
-    "start": "node main",
-    "start-dev": "nodemon main"
+    "start": "node server.js",
+    "start-dev": "nodemon server.js"
   },
   "dependencies": {
     "dotenv": "^17.2.3",

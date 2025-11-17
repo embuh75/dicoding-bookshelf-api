@@ -60,6 +60,7 @@ const getBook = (req, res) => {
     const { name, reading, finished } = req.query;
     let filtered = books;
 
+
     if (name) {
         filtered = filtered.filter((books) => books.name.toLowerCase().includes(name.toLowerCase()));
     }
@@ -71,6 +72,7 @@ const getBook = (req, res) => {
     if (finished !== undefined) {
         filtered = filtered.filter((books) => Number(books.finished) === Number(finished));
     }
+    
 
     const response = filtered.map((books) => ({
         id: books.id,
@@ -95,10 +97,12 @@ const getBookId = (req, res) => {
         });
     }
 
-    res.status(200).json({
-        status: 'success',
-        data: { book }
-    });
+    else {
+        res.status(200).json({
+            status: 'success',
+            data: { book }
+        });
+    }
 };
 
 //Update Book
@@ -114,41 +118,43 @@ const updateBook = (req, res) => {
         });
     }
 
-    if (!name) {
+    else if (!name) {
         res.status(400).json({
             "status": "fail",
             "message": "Gagal memperbarui buku. Mohon isi nama buku"
         });
     }
 
-    if (readPage > pageCount) {
+    else if (readPage > pageCount) {
         res.status(400).json({
             "status": "fail",
             "message": "Gagal memperbarui buku. readPage tidak boleh lebih besar dari pageCount"
         });
     }
 
-    const updatedAt = new Date().toISOString();
-    const finished = pageCount === readPage;
+    else {
+        const updatedAt = new Date().toISOString();
+        const finished = pageCount === readPage;
 
-    books[findBooks] = {
-        ...books[findBooks],
-        name, 
-        year, 
-        author, 
-        summary, 
-        publisher, 
-        pageCount, 
-        readPage,
-        finished, 
-        reading,
-        updatedAt
+        books[findBooks] = {
+            ...books[findBooks],
+            name,
+            year,
+            author,
+            summary,
+            publisher,
+            pageCount,
+            readPage,
+            finished,
+            reading,
+            updatedAt
+        }
+
+        res.status(200).json({
+            "status": "success",
+            "message": "Buku berhasil diperbarui"
+        });
     }
-
-    res.status(200).json({
-        "status": "success",
-        "message": "Buku berhasil diperbarui"
-    });
 };
 
 //Delete Book
@@ -163,11 +169,13 @@ const deleteBook = (req, res) => {
         });
     }
 
-    books.splice(findBooks, 1);
-    res.status(200).json({
-        "status": "success",
-        "message": "Buku berhasil dihapus"
-    });
+    else {
+        books.splice(findBooks, 1);
+        res.status(200).json({
+            "status": "success",
+            "message": "Buku berhasil dihapus"
+        });
+    }
 };
 
 
